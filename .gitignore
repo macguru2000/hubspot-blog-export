@@ -2,3 +2,5 @@
 venv/
 export/
 config.py
+ghost.json
+disqus.xml

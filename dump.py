@@ -42,6 +42,22 @@ class Client(object):
         for blog in r.json()["objects"]:
             yield blog
 
+    def iterate_authors(self):
+        """Get authors for blog"""
+        url = "/blogs/v3/blog-authors"
+        r = self.__get_request(url, additional_params={"limit": 100})
+        r.raise_for_status()
+        for author in r.json()["objects"]:
+            yield author
+
+    def iterate_topics(self):
+        """Get topics for blog"""
+        url = "/blogs/v3/topics"
+        r = self.__get_request(url, additional_params={"limit": 100})
+        r.raise_for_status()
+        for topic in r.json()["objects"]:
+            yield topic
+
     def iterate_posts(self):
         """Get iterator of blog posts of a blog"""
         url = "/content/api/v2/blog-posts"
@@ -67,11 +83,39 @@ def main():
 
     print("Dumping blog content to '%s'..." % export_dir)
 
+    # export authors
+    count = 0
+    for author in hsclient.iterate_authors():
+        folder = os.path.join(export_dir, "authors", str(author["id"]))
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        json_filename = "%s/author_%s.json" % (folder, author["id"])
+        with open(json_filename, "wb") as json_file:
+            json_file.write(json.dumps(author, indent=2, sort_keys=True))
+        count += 1
+    print("Dumped %d authors." % count)
+
+    # export topics
+    count = 0
+    # topics = []
+    for topic in hsclient.iterate_topics():
+        # topics.append(topic)
+        # count += 1
+        folder = os.path.join(export_dir, "topics", str(topic["id"]))
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        json_filename = "%s/topic_%s.json" % (folder, topic["id"])
+        with open(json_filename, "wb") as json_file:
+            json_file.write(json.dumps(topic, indent=2, sort_keys=True))
+        count += 1
+    print("Dumped %d topics." % count)
+
     # export posts
     count = 0
     for post in hsclient.iterate_posts():
-        folder = "/".join([export_dir, str(post["id"])])
-        os.makedirs(folder)
+        folder = os.path.join(export_dir, "posts", str(post["id"]))
+        if not os.path.exists(folder):
+            os.makedirs(folder)
         json_filename = "%s/post_%s.json" % (folder, post["id"])
         with open(json_filename, "wb") as json_file:
             json_file.write(json.dumps(post, indent=2, sort_keys=True))
@@ -85,7 +129,7 @@ def main():
     # export comments
     count = 0
     for comment in hsclient.iterate_comments():
-        folder = "%s/%s/comments" % (export_dir, comment["contentId"])
+        folder = os.path.join(export_dir, "comments", str(comment["contentId"]))
         if not os.path.exists(folder):
             os.makedirs(folder)
         json_filename = "%s/comment_%s.json" % (folder, comment["id"])
